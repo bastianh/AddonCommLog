@@ -1,0 +1,13 @@
+## Interface: 16001
+## Title: Addon Comm Log
+## Notes: Logs addon communication (incoming and outgoing) across all channels, with a log window and a Titan Panel plugin.
+## Notes-deDE: Protokolliert die Addon-Kommunikation (ein- und ausgehend) in allen Kanälen, mit Log-Fenster und Titan-Panel-Plugin.
+## Author: dafire
+## Version: 0.1.0
+## IconTexture: Interface\Icons\INV_Letter_15
+## OptionalDeps: Titan
+## SavedVariables: AddonCommLogDB
+
+Core.lua
+UI.lua
+Titan.lua
