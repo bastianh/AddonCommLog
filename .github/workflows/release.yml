@@ -1,0 +1,44 @@
+name: Package and release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']          # manuell gesetzter Tag ohne "beta" => Release
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release-Version (z.B. 0.2.0) - taggt HEAD von main als Release'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      CF_API_KEY: ${{ secrets.CF_API_KEY }}
+      GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Push auf main => automatischer Beta-Tag v<Basis>-beta.<Run-Nr>
+      - name: Beta-Tag erzeugen
+        if: github.event_name == 'push' && github.ref_type == 'branch'
+        run: |
+          base=$(git describe --tags --abbrev=0 --match 'v[0-9]*' --exclude '*-beta*' 2>/dev/null || echo v0.1.0)
+          tag="${base}-beta.${GITHUB_RUN_NUMBER}"
+          git tag "$tag"
+          git push origin "$tag"
+
+      # Manueller Release-Tag per Button
+      - name: Release-Tag erzeugen
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git tag "v${{ inputs.version }}"
+          git push origin "v${{ inputs.version }}"
+
+      - name: Packager
+        uses: BigWigsMods/packager@v2
