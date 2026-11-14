@@ -8,6 +8,7 @@
 ## OptionalDeps: Titan
 ## SavedVariables: AddonCommLogDB
 
+Locales.lua
 Core.lua
 UI.lua
 Titan.lua

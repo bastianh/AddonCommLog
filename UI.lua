@@ -2,6 +2,7 @@
 
 local ADDON, ns = ...
 local db = ns.db
+local L = ns.L
 
 local MAX_DISPLAY_TEXT = 200
 local LINK_TYPE = "addoncommlog"
@@ -16,8 +17,8 @@ local search = ""
 -- ---------------------------------------------------------------------------
 local function FormatEntry(entry)
     local stamp = date("%H:%M:%S", entry.time)
-    local direction = entry.dir == "in" and "|cff66ccffEIN|r" or "|cffffaa33AUS|r"
-    if entry.echo then direction = "|cff888888ECHO|r" end
+    local direction = entry.dir == "in" and "|cff66ccff" .. L.IN .. "|r" or "|cffffaa33" .. L.OUT .. "|r"
+    if entry.echo then direction = "|cff888888" .. L.ECHO .. "|r" end
     local who
     if entry.dir == "in" then
         who = entry.sender and ns.Escape(entry.sender) or "?"
@@ -28,7 +29,7 @@ local function FormatEntry(entry)
     if entry.addon then
         addon = " |cff999999(" .. ns.Escape(entry.addon) .. ")|r"
     elseif entry.viaLib then
-        addon = " |cff999999(via Lib)|r"
+        addon = " |cff999999(" .. L.VIA_LIB .. ")|r"
     end
     local text = entry.text
     if #text > MAX_DISPLAY_TEXT then text = text:sub(1, MAX_DISPLAY_TEXT) .. "..." end
@@ -40,7 +41,7 @@ end
 local function PlainEntry(entry)
     return string.format("%s %s %s [%s] %s%s%s: %s",
         date("%Y-%m-%d %H:%M:%S", entry.time),
-        entry.echo and "ECHO" or (entry.dir == "in" and "EIN" or "AUS"),
+        entry.echo and "ECHO" or (entry.dir == "in" and L.IN or L.OUT),
         entry.channel, entry.prefix,
         entry.sender or "",
         entry.target and (" -> " .. entry.target) or "",
@@ -67,7 +68,7 @@ local function CreateCopyFrame()
 
     local hint = copyFrame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     hint:SetPoint("BOTTOMLEFT", 12, 10)
-    hint:SetText("Strg+A markiert alles, Strg+C kopiert.")
+    hint:SetText(L.COPY_HINT)
 
     local scroll = CreateFrame("ScrollFrame", nil, copyFrame, "UIPanelScrollFrameTemplate")
     scroll:SetPoint("TOPLEFT", 12, -30)
@@ -96,21 +97,25 @@ function ns.ShowText(title, text)
     copyEdit:HighlightText()
 end
 
+local function Label(text)
+    return text .. string.rep(" ", math.max(1, 11 - #text))
+end
+
 local function ShowDetail(entry)
     local lines = {
-        "Zeit:      " .. date("%Y-%m-%d %H:%M:%S", entry.time),
-        "Richtung:  " .. (entry.echo and "Echo (eigene Nachricht)" or (entry.dir == "in" and "Eingehend" or "Ausgehend")),
-        "Kanal:     " .. entry.channel .. (entry.logged and " (Logged)" or ""),
-        "Präfix:    " .. entry.prefix,
-        "Absender:  " .. (entry.sender or "-"),
-        "Ziel:      " .. (entry.target or "-"),
-        "Addon:     " .. (entry.addon or (entry.viaLib and "über ChatThrottleLib/AceComm, nicht eindeutig") or "unbekannt"),
-        "Länge:     " .. #entry.text .. " Zeichen",
+        Label(L.DETAIL_TIME) .. date("%Y-%m-%d %H:%M:%S", entry.time),
+        Label(L.DETAIL_DIRECTION) .. (entry.echo and L.DIR_ECHO or (entry.dir == "in" and L.DIR_IN or L.DIR_OUT)),
+        Label(L.DETAIL_CHANNEL) .. entry.channel .. (entry.logged and (" " .. L.LOGGED) or ""),
+        Label(L.DETAIL_PREFIX) .. entry.prefix,
+        Label(L.DETAIL_SENDER) .. (entry.sender or "-"),
+        Label(L.DETAIL_TARGET) .. (entry.target or "-"),
+        Label(L.DETAIL_ADDON) .. (entry.addon or (entry.viaLib and L.VIA_LIB_LONG) or L.UNKNOWN),
+        Label(L.DETAIL_LENGTH) .. L.CHARS:format(#entry.text),
         "",
-        "Inhalt:",
+        L.DETAIL_CONTENT,
         entry.text,
     }
-    ns.ShowText("Nachricht #" .. entry.seq, table.concat(lines, "\n"))
+    ns.ShowText(L.DETAIL_TITLE:format(entry.seq), table.concat(lines, "\n"))
 end
 
 function ns.ExportLog()
@@ -118,19 +123,19 @@ function ns.ExportLog()
     ns.Iterate(function(entry)
         if ns.Matches(entry, search) then lines[#lines + 1] = PlainEntry(entry) end
     end)
-    ns.ShowText(("Log-Export (%d Einträge)"):format(#lines), table.concat(lines, "\n"))
+    ns.ShowText(L.EXPORT_TITLE:format(#lines), table.concat(lines, "\n"))
 end
 
 function ns.StatsText()
     local stats = ns.stats
     local rateIn, rateOut = ns.GetRate()
     local lines = {
-        "Seit:       " .. date("%Y-%m-%d %H:%M:%S", stats.since),
-        ("Eingehend:  %d Nachrichten, %s"):format(stats.msgIn, ns.FormatBytes(stats.bytesIn)),
-        ("Ausgehend:  %d Nachrichten, %s"):format(stats.msgOut, ns.FormatBytes(stats.bytesOut)),
-        ("Letzte 60s: %d ein / %d aus"):format(rateIn, rateOut),
+        Label(L.STATS_SINCE) .. date("%Y-%m-%d %H:%M:%S", stats.since),
+        L.STATS_IN:format(stats.msgIn, ns.FormatBytes(stats.bytesIn)),
+        L.STATS_OUT:format(stats.msgOut, ns.FormatBytes(stats.bytesOut)),
+        L.STATS_RATE:format(rateIn, rateOut),
         "",
-        "Präfixe (ein / aus, Bytes ein / aus, Addon):",
+        L.STATS_PREFIXES,
     }
     local prefixes = {}
     for prefix, data in pairs(stats.prefixes) do prefixes[#prefixes + 1] = { prefix = prefix, data = data } end
@@ -143,12 +148,12 @@ function ns.StatsText()
             ns.FormatBytes(data.bytesIn), ns.FormatBytes(data.bytesOut), ns.prefixOwner[item.prefix] or "")
     end
     lines[#lines + 1] = ""
-    lines[#lines + 1] = "Kanäle (ein / aus):"
+    lines[#lines + 1] = L.STATS_CHANNELS
     for channel, data in pairs(stats.channels) do
         lines[#lines + 1] = ("  %-14s %6d / %d"):format(channel, data.msgIn, data.msgOut)
     end
     lines[#lines + 1] = ""
-    lines[#lines + 1] = "Absender (eingehend):"
+    lines[#lines + 1] = L.STATS_SENDERS
     local senders = {}
     for sender, count in pairs(stats.senders) do senders[#senders + 1] = { sender = sender, count = count } end
     table.sort(senders, function(a, b) return a.count > b.count end)
@@ -157,7 +162,7 @@ function ns.StatsText()
     end
     lines[#lines + 1] = ""
     local registered = ns.GetRegisteredPrefixes()
-    lines[#lines + 1] = ("Registrierte Präfixe in diesem Client (%d) – nur diese sind empfangbar:"):format(#registered)
+    lines[#lines + 1] = L.STATS_REGISTERED:format(#registered)
     for _, prefix in ipairs(registered) do
         lines[#lines + 1] = "  " .. prefix .. (ns.prefixOwner[prefix] and ("  (" .. ns.prefixOwner[prefix] .. ")") or "")
     end
@@ -165,7 +170,7 @@ function ns.StatsText()
 end
 
 function ns.ShowStats()
-    ns.ShowText("Statistik", ns.StatsText())
+    ns.ShowText(L.STATS, ns.StatsText())
 end
 
 -- ---------------------------------------------------------------------------
@@ -174,9 +179,9 @@ end
 local function UpdateStatus()
     if not window then return end
     local rateIn, rateOut = ns.GetRate()
-    statusText:SetText(("%d Einträge  ·  letzte 60s: %d ein / %d aus%s"):format(
-        ns.NumEntries(), rateIn, rateOut, db.paused and "  ·  |cffff4040PAUSIERT|r" or ""))
-    pauseButton:SetText(db.paused and "Weiter" or "Pause")
+    statusText:SetText((L.STATUS .. "%s"):format(
+        ns.NumEntries(), rateIn, rateOut, db.paused and "  ·  |cffff4040" .. L.PAUSED_FLAG .. "|r" or ""))
+    pauseButton:SetText(db.paused and L.BTN_RESUME or L.BTN_PAUSE)
 end
 
 local function Rebuild()
@@ -202,16 +207,16 @@ end
 
 local function OpenFilterMenu(owner)
     MenuUtil.CreateContextMenu(owner, function(_, root)
-        root:CreateTitle("Richtung")
-        for _, option in ipairs({ { "Alle", "all" }, { "Nur eingehend", "in" }, { "Nur ausgehend", "out" } }) do
+        root:CreateTitle(L.FILTER_DIRECTION)
+        for _, option in ipairs({ { L.FILTER_ALL, "all" }, { L.FILTER_IN, "in" }, { L.FILTER_OUT, "out" } }) do
             root:CreateRadio(option[1], function() return db.direction == option[2] end,
                 function() db.direction = option[2]; Rebuild() end)
         end
         root:CreateDivider()
-        root:CreateCheckbox("Eigene Echos zeigen", function() return db.showEcho end,
+        root:CreateCheckbox(L.SHOW_ECHOES, function() return db.showEcho end,
             function() db.showEcho = not db.showEcho; Rebuild() end)
         root:CreateDivider()
-        root:CreateTitle("Kanäle")
+        root:CreateTitle(L.FILTER_CHANNELS)
         for _, channel in ipairs(ns.CHANNELS) do
             root:CreateCheckbox(ns.ColorChannel(channel), function() return not db.hiddenChannels[channel] end,
                 function()
@@ -253,7 +258,7 @@ local function CreateWindow()
     window:SetScript("OnDragStop", function(self) self:StopMovingOrSizing(); SavePosition() end)
     local title = window.TitleText or window:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     if not window.TitleText then title:SetPoint("TOP", 0, -5) end
-    title:SetText("Addon Comm Log")
+    title:SetText(L.WINDOW_TITLE)
 
     -- toolbar
     searchBox = CreateFrame("EditBox", nil, window, "SearchBoxTemplate")
@@ -265,15 +270,15 @@ local function CreateWindow()
         Rebuild()
     end)
 
-    local filterButton = CreateButton(window, "Filter", 70, function(self) OpenFilterMenu(self) end)
+    local filterButton = CreateButton(window, L.BTN_FILTER, 70, function(self) OpenFilterMenu(self) end)
     filterButton:SetPoint("LEFT", searchBox, "RIGHT", 8, 0)
-    pauseButton = CreateButton(window, "Pause", 70, function() ns.SetPaused(not db.paused) end)
+    pauseButton = CreateButton(window, L.BTN_PAUSE, 70, function() ns.SetPaused(not db.paused) end)
     pauseButton:SetPoint("LEFT", filterButton, "RIGHT", 4, 0)
-    local clearButton = CreateButton(window, "Leeren", 70, function() ns.Clear() end)
+    local clearButton = CreateButton(window, L.BTN_CLEAR, 70, function() ns.Clear() end)
     clearButton:SetPoint("LEFT", pauseButton, "RIGHT", 4, 0)
-    local exportButton = CreateButton(window, "Kopieren", 80, function() ns.ExportLog() end)
+    local exportButton = CreateButton(window, L.BTN_COPY, 80, function() ns.ExportLog() end)
     exportButton:SetPoint("LEFT", clearButton, "RIGHT", 4, 0)
-    local statsButton = CreateButton(window, "Statistik", 80, function() ns.ShowStats() end)
+    local statsButton = CreateButton(window, L.BTN_STATS, 80, function() ns.ShowStats() end)
     statsButton:SetPoint("LEFT", exportButton, "RIGHT", 4, 0)
 
     -- log
@@ -312,9 +317,9 @@ local function CreateWindow()
         if not entry then return end
         GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
         GameTooltip:AddLine(entry.prefix, 1, 0.82, 0)
-        if entry.addon then GameTooltip:AddLine("Addon: " .. entry.addon, 1, 1, 1) end
-        GameTooltip:AddLine("Linksklick: Details und Kopieren", 0.5, 1, 0.5)
-        GameTooltip:AddLine("Rechtsklick: nach diesem Präfix filtern", 0.5, 1, 0.5)
+        if entry.addon then GameTooltip:AddLine(L.DETAIL_ADDON .. " " .. entry.addon, 1, 1, 1) end
+        GameTooltip:AddLine(L.TIP_LEFT, 0.5, 1, 0.5)
+        GameTooltip:AddLine(L.TIP_RIGHT, 0.5, 1, 0.5)
         GameTooltip:Show()
     end)
     logFrame:SetScript("OnHyperlinkLeave", function() GameTooltip:Hide() end)
@@ -367,17 +372,7 @@ local function Print(message)
     print("|cffffd100Addon Comm Log:|r " .. message)
 end
 
-local HELP = {
-    "/acl – Fenster ein/aus",
-    "/acl pause – Mitschnitt pausieren/fortsetzen",
-    "/acl clear – Log und Statistik leeren",
-    "/acl stats – Statistik anzeigen",
-    "/acl prefixes – registrierte Präfixe auflisten",
-    "/acl watch <Präfix> – fremdes Präfix mithören (bleibt gespeichert)",
-    "/acl unwatch <Präfix> – nicht mehr mithören (wirkt nach /reload)",
-    "/acl echo – eigene Echos ein/aus",
-    "/acl keep – Log über /reload behalten ein/aus",
-}
+local HELP = L.HELP
 
 SLASH_ADDONCOMMLOG1 = "/acl"
 SLASH_ADDONCOMMLOG2 = "/commlog"
@@ -388,31 +383,31 @@ SlashCmdList.ADDONCOMMLOG = function(input)
         ns.ToggleWindow()
     elseif command == "pause" then
         ns.SetPaused(not db.paused)
-        Print(db.paused and "pausiert." or "läuft wieder.")
+        Print(db.paused and L.MSG_PAUSED or L.MSG_RESUMED)
     elseif command == "clear" then
         ns.Clear()
-        Print("geleert.")
+        Print(L.MSG_CLEARED)
     elseif command == "stats" then
         ns.ShowStats()
     elseif command == "prefixes" then
         local list = ns.GetRegisteredPrefixes()
-        Print(("%d registrierte Präfixe:"):format(#list))
+        Print(L.MSG_PREFIX_COUNT:format(#list))
         for _, prefix in ipairs(list) do
             print("  " .. prefix .. (ns.prefixOwner[prefix] and (" |cff999999(" .. ns.prefixOwner[prefix] .. ")|r") or ""))
         end
     elseif command == "watch" then
         local ok, err = ns.Watch(argument)
-        Print(ok and ("höre jetzt " .. argument .. " mit.") or ("Fehler: " .. tostring(err)))
+        Print(ok and L.MSG_WATCHING:format(argument) or L.MSG_ERROR:format(tostring(err)))
     elseif command == "unwatch" then
         ns.Unwatch(argument)
-        Print(argument .. " wird nach /reload nicht mehr registriert.")
+        Print(L.MSG_UNWATCHED:format(argument))
     elseif command == "echo" then
         db.showEcho = not db.showEcho
         ns.Rebuild()
-        Print("eigene Echos " .. (db.showEcho and "sichtbar." or "ausgeblendet."))
+        Print(db.showEcho and L.MSG_ECHO_ON or L.MSG_ECHO_OFF)
     elseif command == "keep" then
         db.keepLog = not db.keepLog
-        Print("Log über /reload behalten: " .. (db.keepLog and "an" or "aus") .. ".")
+        Print(L.MSG_KEEP:format(db.keepLog and L.ON or L.OFF))
     else
         for _, line in ipairs(HELP) do print(line) end
     end
