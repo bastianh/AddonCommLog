@@ -4,7 +4,7 @@ A debugging addon for **WoW Forever** (interface 16001) that logs addon communic
 everything sent and received over the addon message channel – with a searchable log
 window, statistics and an optional Titan Panel plugin.
 
-UI language: German.
+UI languages: English (default) and German (automatic, based on the game client locale).
 
 ## What it captures
 
@@ -15,7 +15,7 @@ UI language: German.
 - **Incoming:** `CHAT_MSG_ADDON`, `CHAT_MSG_ADDON_LOGGED` and `BN_CHAT_MSG_ADDON`.
   The owning addon of a prefix is remembered when it calls `RegisterAddonMessagePrefix`.
 - Channels: PARTY, RAID, INSTANCE_CHAT, GUILD, OFFICER, WHISPER, CHANNEL, SAY, YELL, BN.
-- Values the client marks as secret are never touched and are shown as `<geschützt>`.
+- Values the client marks as secret are never touched and are shown as `<protected>` (`<geschützt>` on German clients).
 
 Only prefixes registered in your client can be received. Use `/acl watch <prefix>` to
 register a foreign prefix and listen in on its traffic.

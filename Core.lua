@@ -4,7 +4,7 @@
 local ADDON, ns = ...
 _G.AddonCommLog = ns
 
-ns.SECRET = "<geschützt>"
+ns.SECRET = ns.L.SECRET
 
 -- ---------------------------------------------------------------------------
 -- Settings
@@ -294,10 +294,10 @@ local function RegisterPrefix(prefix)
 end
 
 function ns.Watch(prefix)
-    if type(prefix) ~= "string" or prefix == "" or #prefix > 16 then return false, "Präfix muss 1-16 Zeichen lang sein." end
+    if type(prefix) ~= "string" or prefix == "" or #prefix > 16 then return false, ns.L.ERR_PREFIX_LENGTH end
     db.watched[prefix] = true
-    if not ns.prefixOwner[prefix] then ns.prefixOwner[prefix] = ADDON .. " (beobachtet)" end
-    if not RegisterPrefix(prefix) then return false, "Registrierung fehlgeschlagen (Limit erreicht?)." end
+    if not ns.prefixOwner[prefix] then ns.prefixOwner[prefix] = ADDON .. " (" .. ns.L.OBSERVED .. ")" end
+    if not RegisterPrefix(prefix) then return false, ns.L.ERR_REGISTER_FAILED end
     return true
 end
 
