@@ -3,7 +3,8 @@
 ## Notes: Logs addon communication (incoming and outgoing) across all channels, with a log window, a Titan Panel plugin and a LibDataBroker data source (Bazooka etc.).
 ## Notes-deDE: Protokolliert die Addon-Kommunikation (ein- und ausgehend) in allen Kanälen, mit Log-Fenster, Titan-Panel-Plugin und LibDataBroker-Datenquelle (Bazooka usw.).
 ## Author: dafire
-## Version: 0.1.0
+## Version: @project-version@
+## X-Curse-Project-ID: 1804257
 ## IconTexture: Interface\Icons\INV_Letter_15
 ## OptionalDeps: Titan, LibDataBroker-1.1, Bazooka, ChocolateBar
 ## SavedVariables: AddonCommLogDB
