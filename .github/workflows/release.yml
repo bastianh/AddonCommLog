@@ -32,6 +32,8 @@ jobs:
           tag="${base}-beta.${GITHUB_RUN_NUMBER}"
           git tag "$tag"
           git push origin "$tag"
+          # Packager soll das als Tag-Build behandeln (sonst "future tag, not packaging")
+          echo "GITHUB_REF=refs/tags/$tag" >> "$GITHUB_ENV"
 
       # Manueller Release-Tag per Button
       - name: Release-Tag erzeugen
@@ -39,6 +41,7 @@ jobs:
         run: |
           git tag "v${{ inputs.version }}"
           git push origin "v${{ inputs.version }}"
+          echo "GITHUB_REF=refs/tags/v${{ inputs.version }}" >> "$GITHUB_ENV"
 
       - name: Packager
         uses: BigWigsMods/packager@v2
