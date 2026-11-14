@@ -28,6 +28,7 @@ register a foreign prefix and listen in on its traffic.
 - Statistics per prefix, channel and sender, plus message rate over the last 60 seconds
 - Optionally keep the last 500 entries across `/reload` and logout
 - Titan Panel plugin showing the current in/out rate, with top prefixes in the tooltip
+- LibDataBroker data source (same info as Titan) for Bazooka, ChocolateBar, ElvUI/Tukui DataTexts and other LDB displays: left-click opens the log, right-click shows the options menu
 
 ## Slash commands
 
